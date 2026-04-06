@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TaskController extends Controller
@@ -15,16 +17,27 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $tasks = Task::where('user_id', auth()->id())->latest()->get();
-        if ($request->filter === 'completed') {
-            $tasks = $tasks->where('is_completed', true);
-        } elseif ($request->filter === 'pending') {
-            $tasks = $tasks->where('is_completed', false);
-        }      
-        elseif ($request->filter === 'overdue') {
-        $tasks = $tasks->where('deadline', '<', now())
-              ->where('is_completed', false);
+        $query = Task::where('user_id', Auth::id());
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+            });
         }
+
+        if ($request->filter === 'completed') {
+            $query->where('status', 'completed');
+        } elseif ($request->filter === 'pending') {
+            $query->whereIn('status', ['pending', 'in_progress']);
+        } elseif ($request->filter === 'overdue') {
+            $query->where('deadline', '<', now())
+                  ->where('status', '!=', 'completed');
+        }
+
+        $tasks = $query->latest()->get();
+
         return view('tasks.index', compact('tasks'));
     }
 
@@ -47,14 +60,14 @@ class TaskController extends Controller
 
         $data = $request->all();
         $data['status'] = $data['status'] ?? 'pending';
-        $data['user_id'] = auth()->id();
+        $data['user_id'] = Auth::id();
         $data['deadline'] = $request->deadline;
 
         Task::create($data);
 
+        Session::flash('success', 'Task created successfully!');
         return redirect()->route('tasks.index');
     }
-
     /**
      * Display the specified resource.
      */
@@ -84,7 +97,8 @@ class TaskController extends Controller
 
         $task->update($request->only(['title', 'description', 'status', 'deadline']));
 
-        return redirect()->route('tasks.show', $task)->with('success', 'Task updated successfully.');
+        Session::flash('success', 'Task updated successfully.');
+        return redirect()->route('tasks.show', $task);
     }
 
     /**
@@ -95,9 +109,9 @@ class TaskController extends Controller
         $this->authorize('delete', $task);
         $task->delete();
 
+        Session::flash('success', 'Task deleted successfully!');
         return redirect()->route('tasks.index');
     }
-
     public function complete(Task $task)
     {
         $this->authorize('update', $task);
@@ -105,6 +119,7 @@ class TaskController extends Controller
             'status' => 'completed'
         ]);
 
+        Session::flash('success', 'Task marked as completed!');
         return redirect()->route('tasks.index');
     }
 
@@ -115,6 +130,7 @@ class TaskController extends Controller
             'status' => 'in_progress'
         ]);
 
+        Session::flash('success', 'Task started!');
         return redirect()->route('tasks.index');
     }
 
@@ -125,6 +141,9 @@ class TaskController extends Controller
             'status' => 'pending'
         ]);
 
-        return redirect()->route('tasks.index');
+        return redirect()->route('tasks.index')->with('success', 'Task reset to pending!');
     }
 }
+    
+
+

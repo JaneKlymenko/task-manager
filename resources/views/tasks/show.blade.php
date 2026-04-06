@@ -16,7 +16,7 @@
                     @endif
 
                     @if(session('success'))
-                        <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded">{{ session('success') }}</div>
+                        <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded alert-message">{{ session('success') }}</div>
                     @endif
 
                     @if(request()->query('edit'))
@@ -31,12 +31,14 @@
                             </div>
                             <div class="mb-4">
                                 <label for="deadline" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Deadline</label>
-                                <input class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm mt-1 block w-full" type="date" name="deadline" id="deadline">
+                                <input class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm mt-1 block w-full" type="date" name="deadline" id="deadline" value="{{ old('deadline', $task->deadline ? $task->deadline->format('Y-m-d') : '') }}">
+                                @error('deadline') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="mb-4">
                                 <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Description') }}</label>
                                 <textarea name="description" id="description" rows="4" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm mt-1 block w-full">{{ old('description', $task->description) }}</textarea>
+                                @error('description') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="mb-4">
@@ -79,4 +81,19 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert-message');
+                alerts.forEach(function(alert) {
+                    alert.style.transition = 'opacity 0.5s ease-out';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500);
+                });
+            }, 30000); // 30 seconds
+        });
+    </script>
 </x-app-layout>

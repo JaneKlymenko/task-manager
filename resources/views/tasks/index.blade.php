@@ -1,21 +1,33 @@
 <x-app-layout>
-    <x-slot name="header">
+    <x-slot name="header" clas=" flex items-center gap-4">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Tasks') }}
         </h2>
+        <form method="GET" action="{{ route('tasks.index') }}" class="flex items-center gap-2">
+            <input type="hidden" name="filter" value="{{ request('filter') }}">   
+            <input 
+            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm mt-1 block w-full" 
+            type="text" name="search" placeholder="Search..." value="{{ request('search') }}">
+            <button type="submit" class="inline-flex items-center px-4 py-2 bg-sky-600 text-white rounded">Search</button>
+        </form>
     </x-slot>
 
     <div class="py-12">
+
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('success'))
+                <div class="mb-4 p-3 bg-green-100 border border-green-300 text-green-700 rounded alert-message">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded alert-message">{{ session('error') }}</div>
+            @endif
+
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <nav class="flex flex-wrap dark:bg-gray-800 items-center gap-2 p-4 bg-gray-50 rounded-xl">
                     @php
                         $currentFilter = request('filter');
-                        // Базові стилі для посилань
                         $baseClasses = "px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-in-out border";
-                        // Стилі для активного стану
                         $activeClasses = "bg-indigo-600 text-white border-indigo-600 shadow-md";
-                        // Стилі для неактивного стану
                         $inactiveClasses = "bg-white text-gray-600 border-gray-300 hover:bg-gray-100 hover:border-gray-400";
                     @endphp
 
@@ -24,13 +36,13 @@
                     All
                     </a>
 
-                    <a href="{{ route('tasks.index', ['filter' => 'completed']) }}" 
-                    class="{{ $baseClasses }} {{ $currentFilter === 'completed' ? $activeClasses : $inactiveClasses }}">
+                    <a href="{{ route('tasks.index', ['filter' => 'pending']) }}" 
+                    class="{{ $baseClasses }} {{ $currentFilter === 'pending' ? $activeClasses : $inactiveClasses }}">
                     Pending
                     </a>
 
-                    <a href="{{ route('tasks.index', ['filter' => 'pending']) }}" 
-                    class="{{ $baseClasses }} {{ $currentFilter === 'pending' ? $activeClasses : $inactiveClasses }}">
+                    <a href="{{ route('tasks.index', ['filter' => 'completed']) }}" 
+                    class="{{ $baseClasses }} {{ $currentFilter === 'completed' ? $activeClasses : $inactiveClasses }}">
                     Completed
                     </a>
 
@@ -103,9 +115,27 @@
                         </form>
                         </div>
                     @endforeach
+                    @if ($tasks === "" || empty($tasks) || count($tasks) === 0)
+                        <p class="text-gray-500 dark:text-gray-400 mt-4">No tasks found.</p>
+                        
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert-message');
+                alerts.forEach(function(alert) {
+                    alert.style.transition = 'opacity 0.5s ease-out';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.remove();
+                    }, 500);
+                });
+            }, 30000); // 30 seconds
+        });
+    </script>
 </x-app-layout>
